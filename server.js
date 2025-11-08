@@ -1,64 +1,91 @@
-// server.js
-// Secure proxy to access OpenAI and Hugging Face APIs without exposing API keys.
-// Works on Render or any Node.js host.
+/*
+Proxy Server for Ancient Brain AI Comparison World
+- Handles ChatGPT (OpenAI) and Hugging Face requests
+- Keys are stored securely as environment variables
+- Returns responses in a format compatible with Ancient Brain main.js
+*/
 
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "*" })); // allow all origins
 app.use(express.json());
 
-
-// Read your API keys from environment variables on Render
+// === Environment variables for API keys ===
+// Set these in Render: OPENAI_API_KEY, HF_API_KEY
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const HF_API_KEY = process.env.HF_API_KEY;
 
-// Root route (for quick testing)
-app.get("/", (req, res) => {
-  res.send("AI API Proxy is running 🚀");
-});
-
-// ---- Proxy for OpenAI ----
+// === ChatGPT endpoint ===
 app.post("/openai", async (req, res) => {
   try {
+    const prompt = req.body.prompt;
+    if (!prompt) return res.status(400).json({ error: "Prompt missing" });
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
     });
 
     const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("OpenAI error:", error);
-    res.status(500).json({ error: "OpenAI proxy error" });
+
+    // Wrap in OpenAI-like format to match main.js
+    const text = data.choices?.[0]?.message?.content || "No response from ChatGPT";
+    res.json({ choices: [{ message: { content: text } }] });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "ChatGPT proxy error" });
   }
 });
 
-// ---- Proxy for Hugging Face ----
+// === Hugging Face endpoint ===
 app.post("/huggingface", async (req, res) => {
   try {
-    const response = await fetch("https://api-inference.huggingface.co/models/distilbert-base-uncased", {
+    const prompt = req.body.prompt;
+    if (!prompt) return res.status(400).json({ error: "Prompt missing" });
+
+    const response = await fetch("https://router.huggingface.co/hf-inference/distilbert-base-uncased", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${HF_API_KEY}`,
+        "Authorization": `Bearer ${HF_API_KEY}`
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify({ inputs: prompt })
     });
 
     const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Hugging Face error:", error);
+
+    // Extract generated text (depends on model output)
+    let text = "";
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      text = data[0].generated_text;
+    } else if (data?.generated_text) {
+      text = data.generated_text;
+    } else {
+      text = JSON.stringify(data, null, 2);
+    }
+
+    res.json([{ generated_text: text }]);
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Hugging Face proxy error" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Proxy running on port ${PORT}`));
+// === Start server ===
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Proxy server running on port ${PORT}`);
+});
