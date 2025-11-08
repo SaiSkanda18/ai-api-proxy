@@ -55,7 +55,7 @@ app.post("/huggingface", async (req, res) => {
     const prompt = req.body.prompt;
     if (!prompt) return res.status(400).json({ error: "Prompt missing" });
 
-    const HF_URL = "https://router.huggingface.co/hf-inference/distilbert-base-uncased";
+    const HF_URL =  "https://router.huggingface.co/hf-inference/gpt2";
 
     const response = await fetch(HF_URL, {
       method: "POST",
@@ -91,3 +91,4 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
+
