@@ -56,7 +56,7 @@ app.post("/huggingface", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Prompt missing" });
 
     // Update this URL to the exact model you want
-    const HF_URL = "https://api-inference.huggingface.co/models/gpt2";
+    const HF_URL = "https://router.huggingface.co/hf-inference/gpt2";
 
     const response = await fetch(HF_URL, {
       method: "POST",
@@ -94,4 +94,5 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
+
 
