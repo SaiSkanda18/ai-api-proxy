@@ -44,7 +44,7 @@ app.post("/openai", async (req, res) => {
     res.json({ choices: [{ message: { content: text } }] });
 
   } catch (err) {
-    console.error(err);
+    console.error("ChatGPT proxy error:", err);
     res.status(500).json({ error: "ChatGPT proxy error" });
   }
 });
@@ -55,7 +55,8 @@ app.post("/huggingface", async (req, res) => {
     const prompt = req.body.prompt;
     if (!prompt) return res.status(400).json({ error: "Prompt missing" });
 
-    const HF_URL =  "https://router.huggingface.co/hf-inference/gpt2";
+    // Update this URL to the exact model you want
+    const HF_URL = "https://router.huggingface.co/hf-inference/gpt2";
 
     const response = await fetch(HF_URL, {
       method: "POST",
@@ -68,7 +69,9 @@ app.post("/huggingface", async (req, res) => {
 
     const data = await response.json();
 
-    // Extract generated text
+    // ⚠️ Add logging to debug HF response
+    console.log("Raw HF response:", data);
+
     let text = "";
     if (Array.isArray(data) && data[0]?.generated_text) {
       text = data[0].generated_text;
@@ -81,7 +84,7 @@ app.post("/huggingface", async (req, res) => {
     res.json([{ generated_text: text }]);
 
   } catch (err) {
-    console.error(err);
+    console.error("HF proxy error:", err);
     res.status(500).json({ error: "Hugging Face proxy error" });
   }
 });
@@ -91,4 +94,3 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
-
