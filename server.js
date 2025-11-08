@@ -7,8 +7,9 @@ import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
+
 
 // Read your API keys from environment variables on Render
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
