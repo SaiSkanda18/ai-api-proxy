@@ -39,7 +39,7 @@ app.post("/openai", async (req, res) => {
 
     const data = await response.json();
 
-    // Wrap in OpenAI-like format to match main.js
+    // Wrap in OpenAI-like format for Ancient Brain
     const text = data.choices?.[0]?.message?.content || "No response from ChatGPT";
     res.json({ choices: [{ message: { content: text } }] });
 
@@ -55,7 +55,9 @@ app.post("/huggingface", async (req, res) => {
     const prompt = req.body.prompt;
     if (!prompt) return res.status(400).json({ error: "Prompt missing" });
 
-    const response = await fetch("https://router.huggingface.co/hf-inference/distilbert-base-uncased", {
+    const HF_URL = "https://router.huggingface.co/hf-inference/distilbert-base-uncased";
+
+    const response = await fetch(HF_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,7 +68,7 @@ app.post("/huggingface", async (req, res) => {
 
     const data = await response.json();
 
-    // Extract generated text (depends on model output)
+    // Extract generated text
     let text = "";
     if (Array.isArray(data) && data[0]?.generated_text) {
       text = data[0].generated_text;
